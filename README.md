@@ -20,10 +20,4 @@ Store the access token securely (e.g., in the user's session or database).
 Retrieve the list of events from the user's calendar using the obtained access token.
 
 
- This is a basic implementation to demonstrate the flow. 
-
-
-
-
-
-Regenerate response
+ This is a basic implementatio
