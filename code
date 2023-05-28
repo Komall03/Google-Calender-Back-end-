@@ -1,0 +1,47 @@
+ implementtion of Google Calendar integration using Django Rest API and OAuth2 mechanism code
+ 
+ import requests
+from django.conf import settings
+from django.shortcuts import redirect
+from django.views import View
+
+class GoogleCalendarInitView(View):
+    def get(self, request):
+        # Generate the authorization URL
+        auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?client_id={settings.GOOGLE_CLIENT_ID}&redirect_uri={settings.GOOGLE_REDIRECT_URI}&response_type=code&scope=https://www.googleapis.com/auth/calendar.readonly"
+        return redirect(auth_url)
+
+class GoogleCalendarRedirectView(View):
+    def get(self, request):
+        # Retrieve the authorization code from the request
+        auth_code = request.GET.get('code')
+
+        # Exchange the authorization code for an access token
+        token_url = "https://oauth2.googleapis.com/token"
+        token_payload = {
+            "code": auth_code,
+            "client_id": settings.GOOGLE_CLIENT_ID,
+            "client_secret": settings.GOOGLE_CLIENT_SECRET,
+            "redirect_uri": settings.GOOGLE_REDIRECT_URI,
+            "grant_type": "authorization_code"
+        }
+        token_response = requests.post(token_url, data=token_payload)
+
+        if token_response.status_code == 200:
+            # Store the access token securely (e.g., in the user's session or database)
+            access_token = token_response.json().get('access_token')
+            
+            # Retrieve the list of events from the user's calendar using the access token
+            events_url = "https://www.googleapis.com/calendar/v3/calendars/primary/events"
+            headers = {
+                "Authorization": f"Bearer {access_token}"
+            }
+            events_response = requests.get(events_url, headers=headers)
+            
+            if events_response.status_code == 200:
+                events = events_response.json().get('items')
+                # Process and return the events as desired
+                return HttpResponse(json.dumps(events), content_type='application/json')
+        
+        # Handle any errors or redirections if the flow fails
+        return HttpResponse("Error in OAuth flow", status=400)
